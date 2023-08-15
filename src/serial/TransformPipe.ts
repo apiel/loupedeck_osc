@@ -1,6 +1,6 @@
 import { Transform, TransformCallback } from 'stream';
 
-export class TransformParser extends Transform {
+export class TransformPipe extends Transform {
   buffer = Buffer.alloc(0);
 
   constructor(protected delimiter: number = 0x82) {

@@ -1,11 +1,11 @@
 import { SerialPort } from 'serialport';
-import { TransformParser } from './TransformParser';
+import { TransformPipe } from './TransformPipe';
 import { Transaction } from './Transaction';
 import { SERIAL_DEVICE_INFO, WS_UPGRADE_HEADER, WS_UPGRADE_RESPONSE } from './constants';
 
 export class Serial {
   connection: SerialPort;
-  parser = new TransformParser();
+  pipe = new TransformPipe();
   protected transaction = new Transaction();
 
   protected constructor(path: string) {
@@ -34,8 +34,8 @@ export class Serial {
 
   onReceive: (data: Buffer) => void = () => {};
   protected handleData() {
-    this.connection.pipe(this.parser);
-    this.parser.on('data', (data) => {
+    this.connection.pipe(this.pipe);
+    this.pipe.on('data', (data) => {
       if (!this.transaction.resolve(data)) {
         this.onReceive(data);
       }
@@ -61,7 +61,7 @@ export class Serial {
     console.log('Connected to device');
   }
 
-  // Make generator using onReceive instead of this.parser.on('data', (buff) => {})
+  // Make generator using onReceive instead of this.pipe.on('data', (buff) => {})
   async *receive(): AsyncGenerator<Buffer> {
     while (true) {
       yield await new Promise((res) => {
