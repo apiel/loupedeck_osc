@@ -60,7 +60,13 @@ class MagicByteLengthParser extends Transform {
 class Transaction {
   protected id = 0;
 
-  queue: { [key: string]: undefined | ((value: unknown) => void) } = {};
+  protected queue: { [key: string]: undefined | ((value: unknown) => void) } = {};
+  // use map instead of object to avoid key collisions
+
+
+  protected getKey(buffer: Buffer) {
+    return `${buffer[1]}-${buffer[2]}`;
+  }
 
   getNextID() {
     this.id = (this.id + 1) % 256;
@@ -72,15 +78,23 @@ class Transaction {
     return this.id;
   }
 
-  getKey(buffer: Buffer) {
-    return `${buffer[1]}-${buffer[2]}`;
-  }
-
   wait(buffer: Buffer) {
     return new Promise((res) => {
       const key = this.getKey(buffer);
       this.queue[key] = res;
     });
+  }
+
+  resolve(buffer: Buffer) {
+    const key = this.getKey(buffer);
+    const resolver = this.queue[key];
+    if (resolver) {
+      console.log('Transaction resolved', buffer.toString('hex'));
+      resolver(buffer);
+      this.queue[key] = undefined;
+      return true;
+    }
+    return false;
   }
 }
 
@@ -88,7 +102,6 @@ export class Serial {
   parser = new MagicByteLengthParser();
   connection: SerialPort;
   transaction = new Transaction();
-
 
   protected constructor(path: string) {
     this.connection = new SerialPort({ path, baudRate: 256000 });
@@ -109,15 +122,7 @@ export class Serial {
   protected handleData() {
     this.connection.pipe(this.parser);
     this.parser.on('data', (data) => {
-      const transactionKey = this.transaction.getKey(data);
-      const resolver = this.transaction.queue[transactionKey];
-      if (resolver) {
-        // console.log('Transaction resolved', data[0], data[1], data[2]);
-        // show in hex
-        console.log('Transaction resolved', data.toString('hex'));
-        resolver(data);
-        this.transaction.queue[transactionKey] = undefined;
-      } else {
+      if (!this.transaction.resolve(data)) {
         this.onReceive(data);
       }
     });
