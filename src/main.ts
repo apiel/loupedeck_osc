@@ -1,13 +1,7 @@
 import { createCanvas } from 'canvas';
 import { Serial } from './serial';
-import { COMMANDS, HAPTIC } from './constants';
+import { COMMANDS, DISPLAY, HAPTIC } from './constants';
 import { writeFileSync } from 'fs';
-
-const displays = {
-  center: { id: Buffer.from('\x00M'), width: 360, height: 270, offset: [60, 0] },
-  left: { id: Buffer.from('\x00M'), width: 60, height: 270 },
-  right: { id: Buffer.from('\x00M'), width: 60, height: 270, offset: [420, 0] },
-};
 
 async function drawSomething() {
   const x = 0;
@@ -43,10 +37,10 @@ async function drawSomething() {
   const serial = await Serial.get();
 
   // Write to frame buffer
-  await serial.send(COMMANDS.FRAMEBUFF, Buffer.concat([displays.center.id, header, buffer]));
+  await serial.send(COMMANDS.FRAMEBUFF, Buffer.concat([DISPLAY.id, header, buffer]));
 
   // Draw to display
-  await serial.send(COMMANDS.DRAW, displays.center.id);
+  await serial.send(COMMANDS.DRAW, DISPLAY.id);
 }
 
 async function main() {

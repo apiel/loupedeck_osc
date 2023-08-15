@@ -46,3 +46,9 @@ export const HAPTIC = {
   RUMBLE1: 0x7b,
   VERY_LONG: 0x76, // 10 sec high freq (!)
 };
+
+export const DISPLAY = {
+  id: Buffer.from('\x00M'),
+  width: 480,
+  height: 270, // 280 ??
+}
