@@ -67,7 +67,7 @@ export async function sendBrightness(brightness: BRIGHTNESS) {
   await serial.send(COMMANDS.SET_BRIGHTNESS, Buffer.from([brightness]));
 }
 
-interface Color {
+export interface Color {
   r: number;
   g: number;
   b: number;
