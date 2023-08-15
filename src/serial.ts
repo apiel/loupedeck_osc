@@ -58,8 +58,7 @@ class MagicByteLengthParser extends Transform {
 }
 
 class Serial {
-  protected parser = new MagicByteLengthParser();
-
+  parser = new MagicByteLengthParser();
   connection: SerialPort;
 
   constructor(path: string) {
