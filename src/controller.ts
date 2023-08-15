@@ -1,5 +1,5 @@
 import { createCanvas } from 'canvas';
-import { COMMANDS, DISPLAY, HAPTIC, BRIGHTNESS } from './constants';
+import { COMMANDS, DISPLAY, HAPTIC, BRIGHTNESS, BUTTONS } from './constants';
 import { Serial } from './serial';
 
 export interface Point {
@@ -62,8 +62,19 @@ export async function sendVibration(vibration: HAPTIC) {
   await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([vibration]));
 }
 
-
 export async function sendBrightness(brightness: BRIGHTNESS) {
   const serial = await Serial.get();
   await serial.send(COMMANDS.SET_BRIGHTNESS, Buffer.from([brightness]));
+}
+
+interface Color {
+  r: number;
+  g: number;
+  b: number;
+}
+
+export async function sendButtonColor(key: BUTTONS, { r, g, b }: Color) {
+  const serial = await Serial.get();
+  const data = Buffer.from([key, r, g, b]);
+  await serial.send(COMMANDS.SET_COLOR, data);
 }

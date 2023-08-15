@@ -50,6 +50,9 @@ export enum HAPTIC {
 export const BRIGHTNESS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
 export type BRIGHTNESS = typeof BRIGHTNESS[number];
 
+export const BUTTONS = [0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e] as const;
+export type BUTTONS = (typeof BUTTONS)[number];
+
 export const DISPLAY = {
   id: Buffer.from('\x00M'),
   width: 480,

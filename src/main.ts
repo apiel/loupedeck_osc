@@ -1,11 +1,18 @@
-import { COMMANDS, HAPTIC } from './constants';
-import { newCanvas, sendBrightness, sendDrawBuffer, sendDrawRender, sendVibration } from './controller';
+import { BUTTONS, COMMANDS, HAPTIC } from './constants';
+import {
+  newCanvas,
+  sendBrightness,
+  sendButtonColor,
+  sendDrawBuffer,
+  sendDrawRender,
+  sendVibration,
+} from './controller';
 import { Serial } from './serial';
 
 async function drawSomething() {
   const size = { w: 90, h: 90 };
 
-  const {ctx, canvas, position } = newCanvas({ size });
+  const { ctx, canvas, position } = newCanvas({ size });
   ctx.fillStyle = 'red';
   ctx.fillRect(0, 0, size.w, size.h);
   const buffer = canvas.toBuffer('raw');
@@ -31,6 +38,12 @@ async function main() {
         // await drawSomething();
         await sendVibration(HAPTIC.SHORT);
         await sendBrightness(1);
+      } else if (line === '0500000900') {
+        sendButtonColor(BUTTONS[2], {
+          r: Math.floor(Math.random() * 256),
+          g: Math.floor(Math.random() * 256),
+          b: Math.floor(Math.random() * 256),
+        });
       }
     }
   }
