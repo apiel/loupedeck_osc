@@ -1,4 +1,3 @@
-import { BUTTONS, COMMANDS, HAPTIC } from './constants';
 import {
   newCanvas,
   sendBrightness,
@@ -6,8 +5,12 @@ import {
   sendDrawBuffer,
   sendDrawRender,
   sendVibration,
+  BUTTONS,
+  HAPTIC,
 } from './controller';
-import { Serial } from './serial';
+
+// TODO maybe we can get rid of this
+import { Serial } from './controller/serial';
 
 async function drawSomething() {
   const size = { w: 90, h: 90 };

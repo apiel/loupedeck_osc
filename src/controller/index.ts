@@ -2,6 +2,8 @@ import { createCanvas } from 'canvas';
 import { COMMANDS, DISPLAY, HAPTIC, BRIGHTNESS, BUTTONS } from './constants';
 import { Serial } from './serial';
 
+export * from './constants';
+
 export interface Point {
   x: number;
   y: number;
@@ -78,3 +80,5 @@ export async function sendButtonColor(key: BUTTONS, { r, g, b }: Color) {
   const data = Buffer.from([key, r, g, b]);
   await serial.send(COMMANDS.SET_COLOR, data);
 }
+
+// TODO message parser
