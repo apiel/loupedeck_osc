@@ -1,5 +1,5 @@
 import { COMMANDS, HAPTIC } from './constants';
-import { newCanvas, sendDrawBuffer, sendDrawRender } from './controller';
+import { newCanvas, sendDrawBuffer, sendDrawRender, sendVibration } from './controller';
 import { Serial } from './serial';
 
 async function drawSomething() {
@@ -17,7 +17,7 @@ async function drawSomething() {
 async function main() {
   const serial = await Serial.get();
 
-  await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.LONG]));
+  await sendVibration(HAPTIC.LONG);
   await drawSomething();
 
   for await (const data of serial.receive()) {
@@ -28,7 +28,7 @@ async function main() {
       if (line === '0500000800') {
         console.log('pressed 1');
         // await drawSomething();
-        await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.SHORT]));
+        await sendVibration(HAPTIC.SHORT);
       }
     }
   }

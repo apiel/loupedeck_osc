@@ -1,5 +1,5 @@
 import { createCanvas } from 'canvas';
-import { COMMANDS, DISPLAY } from './constants';
+import { COMMANDS, DISPLAY, HAPTIC } from './constants';
 import { Serial } from './serial';
 
 export interface Point {
@@ -55,4 +55,9 @@ export async function sendDrawBuffer(buffer: Buffer, options: DrawBufferProps) {
 export async function sendDrawRender() {
   const serial = await Serial.get();
   await serial.send(COMMANDS.DRAW, DISPLAY.id);
+}
+
+export async function sendVibration(vibration: HAPTIC) {
+  const serial = await Serial.get();
+  await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([vibration]));
 }
