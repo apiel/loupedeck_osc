@@ -47,7 +47,7 @@ async function main() {
   const serial = await Serial.get();
 
   await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.LONG]))
-  // await drawSomething();
+  await drawSomething();
 
   for await (const data of serial.receive()) {
     console.log('Received data:');

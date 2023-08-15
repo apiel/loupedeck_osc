@@ -57,21 +57,38 @@ class MagicByteLengthParser extends Transform {
   }
 }
 
+class Transaction {
+  protected id = 0;
+
+  queue: { [key: string]: undefined | ((value: unknown) => void) } = {};
+
+  getNextID() {
+    this.id = (this.id + 1) % 256;
+    // Skip transaction ID's of zero since the device seems to ignore them
+    if (this.id === 0) {
+      this.id++;
+    }
+
+    return this.id;
+  }
+
+  getKey(buffer: Buffer) {
+    return `${buffer[1]}-${buffer[2]}`;
+  }
+
+  wait(buffer: Buffer) {
+    return new Promise((res) => {
+      const key = this.getKey(buffer);
+      this.queue[key] = res;
+    });
+  }
+}
+
 export class Serial {
   parser = new MagicByteLengthParser();
   connection: SerialPort;
+  transaction = new Transaction();
 
-  protected pendingTransactions: { [key: number]: undefined | ((value: unknown) => void) } = {};
-  protected transactionID = 0;
-  protected getNextTransactionID() {
-    this.transactionID = (this.transactionID + 1) % 256;
-    // Skip transaction ID's of zero since the device seems to ignore them
-    if (this.transactionID === 0) {
-      this.transactionID++;
-    }
-
-    return this.transactionID;
-  }
 
   protected constructor(path: string) {
     this.connection = new SerialPort({ path, baudRate: 256000 });
@@ -88,17 +105,18 @@ export class Serial {
     return Serial.serial;
   }
 
-
   onReceive: (data: Buffer) => void = () => {};
   protected handleData() {
     this.connection.pipe(this.parser);
     this.parser.on('data', (data) => {
-      const transactionID = data[2];
-      const resolver = this.pendingTransactions[transactionID];
+      const transactionKey = this.transaction.getKey(data);
+      const resolver = this.transaction.queue[transactionKey];
       if (resolver) {
-        console.log('Transaction resolved');
+        // console.log('Transaction resolved', data[0], data[1], data[2]);
+        // show in hex
+        console.log('Transaction resolved', data.toString('hex'));
         resolver(data);
-        this.pendingTransactions[transactionID] = undefined;
+        this.transaction.queue[transactionKey] = undefined;
       } else {
         this.onReceive(data);
       }
@@ -131,7 +149,7 @@ export class Serial {
         this.onReceive = res;
       });
     }
-  } 
+  }
 
   protected getPacketPrefix(packet: Buffer) {
     // Large messages
@@ -151,7 +169,7 @@ export class Serial {
   }
 
   async send(command: number, data = Buffer.alloc(0)) {
-    const transactionID = this.getNextTransactionID();
+    const transactionID = this.transaction.getNextID();
     const header = Buffer.alloc(3);
     header[0] = Math.min(3 + data.length, 0xff);
     header[1] = command;
@@ -160,9 +178,6 @@ export class Serial {
 
     this.connection.write(this.getPacketPrefix(packet));
     this.connection.write(packet);
-
-    return new Promise((res) => {
-      this.pendingTransactions[this.transactionID] = res;
-    });
+    return this.transaction.wait(packet);
   }
 }
