@@ -1,24 +1,32 @@
 import { createCanvas } from 'canvas';
 import { Serial } from './serial';
 import { COMMANDS, HAPTIC } from './constants';
+import { writeFileSync } from 'fs';
 
 const displays = {
-  center: { id: Buffer.from('\x00A'), width: 360, height: 270 }, // "A"
-  left: { id: Buffer.from('\x00L'), width: 60, height: 270 }, // "L"
-  right: { id: Buffer.from('\x00R'), width: 60, height: 270 }, // "R"
+  center: { id: Buffer.from('\x00M'), width: 360, height: 270, offset: [60, 0] },
+  left: { id: Buffer.from('\x00M'), width: 60, height: 270 },
+  right: { id: Buffer.from('\x00M'), width: 60, height: 270, offset: [420, 0] },
 };
 
 async function drawSomething() {
-  const canvas = createCanvas(100, 200);
-  const ctx = canvas.getContext('2d', { pixelFormat: 'RGB16_565' });
-  ctx.fillStyle = 'red';
-
   const x = 0;
   const y = 0;
-  const w = 100;
-  const h = 200;
+  // const w = 100;
+  // const h = 200;
+  const w = 90;
+  const h = 90;
+
+  const canvas = createCanvas(w, h);
+  const ctx = canvas.getContext('2d', { pixelFormat: 'RGB16_565' });
+  ctx.fillStyle = 'blue';
   ctx.fillRect(0, 0, w, h);
   const buffer = canvas.toBuffer('raw');
+
+  console.log(`Buff len ${buffer.length}`)
+  // // save buffer to file
+  // const bufferPng = canvas.toBuffer("image/png");
+  // writeFileSync("./image.png", bufferPng);
 
   // should we care?
   const pixelCount = w * h * 2;
@@ -44,7 +52,7 @@ async function drawSomething() {
 async function main() {
   const serial = await Serial.get();
 
-  await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.LONG]))
+  await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.LONG]));
   await drawSomething();
 
   for await (const data of serial.receive()) {
@@ -55,7 +63,7 @@ async function main() {
       if (line === '0500000800') {
         console.log('pressed 1');
         // await drawSomething();
-        await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.SHORT]))
+        await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.SHORT]));
       }
     }
   }

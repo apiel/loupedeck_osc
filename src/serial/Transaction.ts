@@ -27,7 +27,7 @@ export class Transaction {
     const key = this.getKey(buffer);
     const resolver = this.queue.get(key);
     if (resolver) {
-      console.log('Transaction resolved', buffer.toString('hex'));
+      // console.log('Transaction resolved', buffer.toString('hex'));
       resolver(buffer);
       this.queue.delete(key);
       return true;
