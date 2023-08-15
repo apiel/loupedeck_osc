@@ -47,6 +47,9 @@ export enum HAPTIC {
   VERY_LONG = 0x76, // 10 sec high freq (!)
 }
 
+export const BRIGHTNESS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
+export type BRIGHTNESS = typeof BRIGHTNESS[number];
+
 export const DISPLAY = {
   id: Buffer.from('\x00M'),
   width: 480,
