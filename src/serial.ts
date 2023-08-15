@@ -59,10 +59,7 @@ class MagicByteLengthParser extends Transform {
 
 class Transaction {
   protected id = 0;
-
-  protected queue: { [key: string]: undefined | ((value: unknown) => void) } = {};
-  // use map instead of object to avoid key collisions
-
+  protected queue = new Map<string, undefined | ((value: unknown) => void)>();
 
   protected getKey(buffer: Buffer) {
     return `${buffer[1]}-${buffer[2]}`;
@@ -81,17 +78,17 @@ class Transaction {
   wait(buffer: Buffer) {
     return new Promise((res) => {
       const key = this.getKey(buffer);
-      this.queue[key] = res;
+      this.queue.set(key, res);
     });
   }
 
   resolve(buffer: Buffer) {
     const key = this.getKey(buffer);
-    const resolver = this.queue[key];
+    const resolver = this.queue.get(key);
     if (resolver) {
       console.log('Transaction resolved', buffer.toString('hex'));
       resolver(buffer);
-      this.queue[key] = undefined;
+      this.queue.delete(key);
       return true;
     }
     return false;
