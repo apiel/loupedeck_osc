@@ -1,104 +1,12 @@
 import { SerialPort } from 'serialport';
-import { Transform, TransformCallback } from 'stream';
-
-const WS_UPGRADE_HEADER = `GET /index.html
-HTTP/1.1
-Connection: Upgrade
-Upgrade: websocket
-Sec-WebSocket-Key: 123abc
-
-`;
-const WS_UPGRADE_RESPONSE = 'HTTP/1.1';
-
-const serialDeviceInfo = [
-  {
-    manufacturer: 'Razer Inc.',
-    productId: '0d06',
-  },
-];
-
-async function discover() {
-  for (const { manufacturer, productId, path } of await SerialPort.list()) {
-    if (serialDeviceInfo.some((d) => d.manufacturer === manufacturer && d.productId === productId)) {
-      return path;
-    }
-  }
-  throw new Error('No device found');
-}
-
-class MagicByteLengthParser extends Transform {
-  buffer = Buffer.alloc(0);
-
-  constructor(protected delimiter: number = 0x82) {
-    super();
-  }
-
-  _transform(chunk: any, _: BufferEncoding, callback: TransformCallback) {
-    let data = Buffer.concat([this.buffer, chunk]);
-    let position;
-    while ((position = data.indexOf(this.delimiter)) !== -1) {
-      // We need to at least be able to read the length byte
-      if (data.length < position + 2) break;
-      const nextLength = data[position + 1];
-      // Make sure we have enough bytes to meet this length
-      const expectedEnd = position + nextLength + 2;
-      if (data.length < expectedEnd) break;
-      this.push(data.subarray(position + 2, expectedEnd));
-      data = data.subarray(expectedEnd);
-    }
-    this.buffer = data;
-    callback();
-  }
-
-  _flush(callback: TransformCallback) {
-    this.push(this.buffer);
-    this.buffer = Buffer.alloc(0);
-    callback();
-  }
-}
-
-class Transaction {
-  protected id = 0;
-  protected queue = new Map<string, undefined | ((value: unknown) => void)>();
-
-  protected getKey(buffer: Buffer) {
-    return `${buffer[1]}-${buffer[2]}`;
-  }
-
-  getNextID() {
-    this.id = (this.id + 1) % 256;
-    // Skip transaction ID's of zero since the device seems to ignore them
-    if (this.id === 0) {
-      this.id++;
-    }
-
-    return this.id;
-  }
-
-  wait(buffer: Buffer) {
-    return new Promise((res) => {
-      const key = this.getKey(buffer);
-      this.queue.set(key, res);
-    });
-  }
-
-  resolve(buffer: Buffer) {
-    const key = this.getKey(buffer);
-    const resolver = this.queue.get(key);
-    if (resolver) {
-      console.log('Transaction resolved', buffer.toString('hex'));
-      resolver(buffer);
-      this.queue.delete(key);
-      return true;
-    }
-    return false;
-  }
-}
+import { MagicByteLengthParser } from './MagicByteLengthParser';
+import { Transaction } from './Transaction';
+import { SERIAL_DEVICE_INFO, WS_UPGRADE_HEADER, WS_UPGRADE_RESPONSE } from './constants';
 
 export class Serial {
-  parser = new MagicByteLengthParser();
   connection: SerialPort;
-  transaction = new Transaction();
+  parser = new MagicByteLengthParser();
+  protected transaction = new Transaction();
 
   protected constructor(path: string) {
     this.connection = new SerialPort({ path, baudRate: 256000 });
@@ -107,12 +15,21 @@ export class Serial {
   static serial: Serial;
   static async get() {
     if (!Serial.serial) {
-      const path = await discover();
+      const path = await Serial.discover();
       console.log(`Connecting to device on path ${path}`);
       Serial.serial = new Serial(path);
       await Serial.serial.connect();
     }
     return Serial.serial;
+  }
+
+  static async discover() {
+    for (const { manufacturer, productId, path } of await SerialPort.list()) {
+      if (SERIAL_DEVICE_INFO.some((d) => d.manufacturer === manufacturer && d.productId === productId)) {
+        return path;
+      }
+    }
+    throw new Error('No device found');
   }
 
   onReceive: (data: Buffer) => void = () => {};

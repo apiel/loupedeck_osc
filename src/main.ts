@@ -2,8 +2,6 @@ import { createCanvas } from 'canvas';
 import { Serial } from './serial';
 import { COMMANDS, HAPTIC } from './constants';
 
-
-
 const displays = {
   center: { id: Buffer.from('\x00A'), width: 360, height: 270 }, // "A"
   left: { id: Buffer.from('\x00L'), width: 60, height: 270 }, // "L"
