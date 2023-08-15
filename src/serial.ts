@@ -57,7 +57,7 @@ class MagicByteLengthParser extends Transform {
   }
 }
 
-class Serial {
+export class Serial {
   parser = new MagicByteLengthParser();
   connection: SerialPort;
 
@@ -73,11 +73,37 @@ class Serial {
     return this.transactionID;
   }
 
-  constructor(path: string) {
+  protected constructor(path: string) {
     this.connection = new SerialPort({ path, baudRate: 256000 });
   }
 
+  static serial: Serial;
+  static async get() {
+    if (!Serial.serial) {
+      const path = await discover();
+      console.log(`Connecting to device on path ${path}`);
+      Serial.serial = new Serial(path);
+      await Serial.serial.connect();
+    }
+    return Serial.serial;
+  }
+
+
   onReceive: (data: Buffer) => void = () => {};
+  protected handleData() {
+    this.connection.pipe(this.parser);
+    this.parser.on('data', (data) => {
+      const transactionID = data[2];
+      const resolver = this.pendingTransactions[transactionID];
+      if (resolver) {
+        console.log('Transaction resolved');
+        resolver(data);
+        this.pendingTransactions[transactionID] = undefined;
+      } else {
+        this.onReceive(data);
+      }
+    });
+  }
 
   async connect() {
     await new Promise((res) => this.connection.once('open', res));
@@ -93,24 +119,13 @@ class Serial {
       this.connection.write(Buffer.from(WS_UPGRADE_HEADER));
       this.connection.write(Buffer.from(WS_UPGRADE_HEADER));
     });
-    this.connection.pipe(this.parser);
-    this.parser.on('data', (data) => {
-      const transactionID = data[2];
-      const resolver = this.pendingTransactions[transactionID];
-      if (resolver) {
-        console.log('Transaction resolved');
-        resolver(data);
-        this.pendingTransactions[transactionID] = undefined;
-      } else {
-        this.onReceive(data);
-      }
-    });
+    this.handleData();
 
     console.log('Connected to device');
   }
 
   // Make generator using onReceive instead of this.parser.on('data', (buff) => {})
-  async *receive() {
+  async *receive(): AsyncGenerator<Buffer> {
     while (true) {
       yield await new Promise((res) => {
         this.onReceive = res;
@@ -146,32 +161,8 @@ class Serial {
     this.connection.write(this.getPacketPrefix(packet));
     this.connection.write(packet);
 
-    // // This is not good cause it will break the generator loop
-    // const waitTransaction = (res: (value: any) => void) => {
-    //   this.parser.once('data', (buff) => {
-    //     if (transactionID == buff[2]) {
-    //       console.log('transactionID matches');
-    //       res(void 0);
-    //     } else {
-    //       waitTransaction(res);
-    //     }
-    //   });
-    // };
-    // return new Promise(waitTransaction);
     return new Promise((res) => {
       this.pendingTransactions[this.transactionID] = res;
     });
   }
-}
-
-let serial: Serial;
-
-export async function getSerial() {
-  if (!serial) {
-    const path = await discover();
-    console.log(`Connecting to device on path ${path}`);
-    serial = new Serial(path);
-    await serial.connect();
-  }
-  return serial;
 }

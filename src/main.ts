@@ -1,5 +1,5 @@
 import { createCanvas } from 'canvas';
-import { getSerial } from './serial';
+import { Serial } from './serial';
 import { COMMANDS, HAPTIC } from './constants';
 
 
@@ -34,7 +34,7 @@ async function drawSomething() {
   header.writeUInt16BE(w, 4);
   header.writeUInt16BE(h, 6);
 
-  const serial = await getSerial();
+  const serial = await Serial.get();
 
   // Write to frame buffer
   await serial.send(COMMANDS.FRAMEBUFF, Buffer.concat([displays.center.id, header, buffer]));
@@ -44,7 +44,7 @@ async function drawSomething() {
 }
 
 async function main() {
-  const serial = await getSerial();
+  const serial = await Serial.get();
 
   await serial.send(COMMANDS.SET_VIBRATION, Buffer.from([HAPTIC.LONG]))
   // await drawSomething();
@@ -52,7 +52,7 @@ async function main() {
   for await (const data of serial.receive()) {
     console.log('Received data:');
     for (let i = 0; i < data.length; i += 16) {
-      const line = data.slice(i, i + 16).toString('hex');
+      const line = data.subarray(i, i + 16).toString('hex');
       console.log(line);
       if (line === '0500000800') {
         console.log('pressed 1');
