@@ -1,11 +1,11 @@
 import { SerialPort } from 'serialport';
-import { MagicByteLengthParser } from './MagicByteLengthParser';
+import { TransformParser } from './TransformParser';
 import { Transaction } from './Transaction';
 import { SERIAL_DEVICE_INFO, WS_UPGRADE_HEADER, WS_UPGRADE_RESPONSE } from './constants';
 
 export class Serial {
   connection: SerialPort;
-  parser = new MagicByteLengthParser();
+  parser = new TransformParser();
   protected transaction = new Transaction();
 
   protected constructor(path: string) {
