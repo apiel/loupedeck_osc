@@ -8,6 +8,7 @@ import {
   BUTTONS,
   HAPTIC,
   handleMessage,
+  BRIGHTNESS,
 } from './controller';
 
 // TODO maybe we can get rid of this
@@ -33,25 +34,27 @@ async function main() {
   await drawSomething();
 
   for await (const data of serial.receive()) {
-    console.log('Received data:');
-    for (let i = 0; i < data.length; i += 16) {
-      const line = data.subarray(i, i + 16).toString('hex');
-      console.log(line);
-      if (line === '0500000800') {
-        console.log('pressed 1');
-        // await drawSomething();
-        await sendVibration(HAPTIC.SHORT);
-        await sendBrightness(1);
-      } else if (line === '0500000900') {
-        sendButtonColor(BUTTONS.button2, {
-          r: Math.floor(Math.random() * 256),
-          g: Math.floor(Math.random() * 256),
-          b: Math.floor(Math.random() * 256),
-        });
-      }
-    }
-    console.log('Use handler:');
-    handleMessage(data);
+    await handleMessage(data, {
+      onButton: async (button, event) => {
+        console.log('Button event:', button, event);
+        if (button.id === BUTTONS.button1.id) {
+          await sendVibration(HAPTIC.SHORT);
+          await sendBrightness((Math.floor(Math.random() * 10) + 1) as BRIGHTNESS);
+        } else if (button.id === BUTTONS.button2.id) {
+          sendButtonColor(BUTTONS.button2, {
+            r: Math.floor(Math.random() * 256),
+            g: Math.floor(Math.random() * 256),
+            b: Math.floor(Math.random() * 256),
+          });
+        }
+      },
+      onKnob: (knob, direction) => {
+        console.log('Knob event:', knob, direction);
+      },
+      onTouch: (state, event) => {
+        console.log('Touch event:', state, event);
+      },
+    });
   }
 }
 
