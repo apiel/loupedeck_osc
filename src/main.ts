@@ -1,5 +1,4 @@
 import {
-  newCanvas,
   sendBrightness,
   sendButtonColor,
   sendFramebuffer,
@@ -10,6 +9,7 @@ import {
   BRIGHTNESS,
   setMessageHandler,
 } from './controller';
+import { newCanvas } from './draw';
 
 async function drawSomething() {
   const size = { w: 90, h: 90 };
