@@ -79,35 +79,57 @@ export async function sendButtonColor({ id }: Button, { r, g, b }: Color) {
   await serial.send(COMMANDS.SET_COLOR, data);
 }
 
-// TODO message parser
-const handlers = {
-  [COMMANDS.BUTTON_PRESS]: (data: Buffer) => {
-    const id = Number(data[3]);
-    const button = BUTTONS_BY_ID[id];
-    const event = data[4] === 0x00 ? 'down' : 'up';
-    console.log(`Button`, { button, event });
-  },
-  [COMMANDS.KNOB_ROTATE]: (data: Buffer) => {
-    const id = Number(data[3]);
-    const knob = BUTTONS_BY_ID[id];
-    const direction = data.readInt8(4);
-    console.log(`Knob ${id} rotated ${direction}`, knob);
-  },
-  [COMMANDS.TOUCH]: (data: Buffer) => {
-    const multitouch = data.readUInt16BE(2);
-    const x = data.readUInt16BE(4);
-    const y = data.readUInt16BE(6);
-    console.log(`Touch ${multitouch} start ${x}, ${y}:`, data.toString('hex'));
-  },
-  [COMMANDS.TOUCH_END]: (data: Buffer) => {
-    const multitouch = data.readUInt16BE(2);
-    const x = data.readUInt16BE(4);
-    const y = data.readUInt16BE(6);
-    console.log(`Touch ${multitouch} end ${x}, ${y}:`, data.toString('hex'));
-  },
-};
+interface TouchState {
+  multitouch: number;
+  position: Point;
+  origin: Point;
+  moved: boolean;
+  startTime: number;
+}
+
+const touchStates = new Map<number, TouchState>();
 
 export function handleMessage(data: Buffer) {
+  const touchHandler = (event: 'touch' | 'release') => (data: Buffer) => {
+    const multitouch = data.readUInt16BE(2);
+    const x = data.readUInt16BE(4);
+    const y = data.readUInt16BE(6);
+    let state = touchStates.get(multitouch);
+    if (!state) {
+      state = {
+        multitouch,
+        position: { x, y },
+        origin: { x, y },
+        moved: false,
+        startTime: Date.now(),
+      };
+      touchStates.set(multitouch, state);
+    } else if (event === 'release') {
+        touchStates.delete(multitouch);
+    } else {
+      state.moved = true;
+    }
+    state.position = { x, y };
+
+    console.log(`Touch ${event}`, state);
+  };
+  const handlers = {
+    [COMMANDS.BUTTON_PRESS]: (data: Buffer) => {
+      const id = Number(data[3]);
+      const button = BUTTONS_BY_ID[id];
+      const event = data[4] === 0x00 ? 'down' : 'up';
+      console.log(`Button`, { button, event });
+    },
+    [COMMANDS.KNOB_ROTATE]: (data: Buffer) => {
+      const id = Number(data[3]);
+      const knob = BUTTONS_BY_ID[id];
+      const direction = data.readInt8(4);
+      console.log(`Knob ${id} rotated ${direction}`, knob);
+    },
+    [COMMANDS.TOUCH]: touchHandler('touch'),
+    [COMMANDS.TOUCH_END]: touchHandler('release'),
+  };
+
   const command = data[1];
   const handler = handlers[command];
   if (handler) {
