@@ -2,7 +2,7 @@ import {
   newCanvas,
   sendBrightness,
   sendButtonColor,
-  sendDrawBuffer,
+  sendFramebuffer,
   sendDrawRender,
   sendVibration,
   BUTTONS,
@@ -20,7 +20,7 @@ async function drawSomething() {
   ctx.fillRect(0, 0, size.w, size.h);
   const buffer = canvas.toBuffer('raw');
 
-  await sendDrawBuffer(buffer, { position, size });
+  await sendFramebuffer(buffer, { position, size });
   await sendDrawRender();
 }
 
