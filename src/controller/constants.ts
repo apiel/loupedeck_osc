@@ -47,11 +47,36 @@ export enum HAPTIC {
   VERY_LONG = 0x76, // 10 sec high freq (!)
 }
 
-export const BRIGHTNESS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
-export type BRIGHTNESS = typeof BRIGHTNESS[number];
+export const BRIGHTNESS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export type BRIGHTNESS = (typeof BRIGHTNESS)[number];
 
-export const BUTTONS = [0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e] as const;
-export type BUTTONS = (typeof BUTTONS)[number];
+export interface Button {
+  id: number;
+  label: string;
+  isKnob: boolean;
+}
+
+export const BUTTONS: { [key: string]: Button } = {
+  knob1: { id: 0x01, label: 'knob1', isKnob: true },
+  knob2: { id: 0x02, label: 'knob2', isKnob: true },
+  knob3: { id: 0x03, label: 'knob3', isKnob: true },
+  knob4: { id: 0x04, label: 'knob4', isKnob: true },
+  knob5: { id: 0x05, label: 'knob5', isKnob: true },
+  knob6: { id: 0x06, label: 'knob6', isKnob: true },
+  button0: { id: 0x07, label: 'button0', isKnob: false },
+  button1: { id: 0x08, label: 'button1', isKnob: false },
+  button2: { id: 0x09, label: 'button2', isKnob: false },
+  button3: { id: 0x0a, label: 'button3', isKnob: false },
+  button4: { id: 0x0b, label: 'button4', isKnob: false },
+  button5: { id: 0x0c, label: 'button5', isKnob: false },
+  button6: { id: 0x0d, label: 'button6', isKnob: false },
+  button7: { id: 0x0e, label: 'button7', isKnob: false },
+};
+
+export const BUTTONS_BY_ID = Object.values(BUTTONS).reduce((acc, button) => {
+  acc[button.id] = button;
+  return acc;
+}, {} as { [key: number]: Button });
 
 export const DISPLAY = {
   id: Buffer.from('\x00M'),

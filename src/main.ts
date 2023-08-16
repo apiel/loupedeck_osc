@@ -7,6 +7,7 @@ import {
   sendVibration,
   BUTTONS,
   HAPTIC,
+  handleMessage,
 } from './controller';
 
 // TODO maybe we can get rid of this
@@ -42,13 +43,15 @@ async function main() {
         await sendVibration(HAPTIC.SHORT);
         await sendBrightness(1);
       } else if (line === '0500000900') {
-        sendButtonColor(BUTTONS[2], {
+        sendButtonColor(BUTTONS.button2, {
           r: Math.floor(Math.random() * 256),
           g: Math.floor(Math.random() * 256),
           b: Math.floor(Math.random() * 256),
         });
       }
     }
+    console.log('Use handler:');
+    handleMessage(data);
   }
 }
 

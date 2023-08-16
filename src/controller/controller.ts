@@ -1,5 +1,5 @@
 import { createCanvas } from 'canvas';
-import { COMMANDS, DISPLAY, HAPTIC, BRIGHTNESS, BUTTONS } from './constants';
+import { COMMANDS, DISPLAY, HAPTIC, BRIGHTNESS, BUTTONS, Button, BUTTONS_BY_ID } from './constants';
 import { Serial } from './serial';
 
 export interface Point {
@@ -73,10 +73,46 @@ export interface Color {
   b: number;
 }
 
-export async function sendButtonColor(key: BUTTONS, { r, g, b }: Color) {
+export async function sendButtonColor({ id }: Button, { r, g, b }: Color) {
   const serial = await Serial.get();
-  const data = Buffer.from([key, r, g, b]);
+  const data = Buffer.from([id, r, g, b]);
   await serial.send(COMMANDS.SET_COLOR, data);
 }
 
 // TODO message parser
+const handlers = {
+  [COMMANDS.BUTTON_PRESS]: (data: Buffer) => {
+    const id = Number(data[3]);
+    const button = BUTTONS_BY_ID[id];
+    const event = data[4] === 0x00 ? 'down' : 'up';
+    console.log(`Button`, { button, event });
+  },
+  [COMMANDS.KNOB_ROTATE]: (data: Buffer) => {
+    const id = Number(data[3]);
+    const knob = BUTTONS_BY_ID[id];
+    const direction = data.readInt8(4);
+    console.log(`Knob ${id} rotated ${direction}`, knob);
+  },
+  [COMMANDS.TOUCH]: (data: Buffer) => {
+    const multitouch = data.readUInt16BE(2);
+    const x = data.readUInt16BE(4);
+    const y = data.readUInt16BE(6);
+    console.log(`Touch ${multitouch} start ${x}, ${y}:`, data.toString('hex'));
+  },
+  [COMMANDS.TOUCH_END]: (data: Buffer) => {
+    const multitouch = data.readUInt16BE(2);
+    const x = data.readUInt16BE(4);
+    const y = data.readUInt16BE(6);
+    console.log(`Touch ${multitouch} end ${x}, ${y}:`, data.toString('hex'));
+  },
+};
+
+export function handleMessage(data: Buffer) {
+  const command = data[1];
+  const handler = handlers[command];
+  if (handler) {
+    handler(data);
+  } else {
+    console.log(`Unhandled command: ${command}`);
+  }
+}
