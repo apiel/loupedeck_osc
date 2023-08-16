@@ -42,16 +42,6 @@ export class Serial {
     });
   }
 
-  // FIXME delete me?
-  // Make generator using onReceive instead of this.pipe.on('data', (buff) => {})
-  async *receive(): AsyncGenerator<Buffer> {
-    while (true) {
-      yield await new Promise((res) => {
-        this.onReceive = res;
-      });
-    }
-  }
-
   async connect() {
     await new Promise((res) => this.connection.once('open', res));
     await new Promise((res, rej) => {

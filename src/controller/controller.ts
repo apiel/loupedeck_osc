@@ -147,3 +147,8 @@ export function handleMessage(data: Buffer, { onButton, onKnob, onTouch }: Messa
     console.log(`Unhandled command: ${command}`);
   }
 }
+
+export async function setMessageHandler(handler: MessageHandlerCallback) {
+  const serial = await Serial.get();
+  serial.onReceive = (data) => handleMessage(data, handler);
+}
