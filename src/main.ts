@@ -26,6 +26,8 @@ async function drawSomething() {
 }
 
 let SAMPLE_RATE_REDUCER = 0;
+let FILTER_CUTOFF = 0;
+let FILTER_RESONANCE = 0;
 async function main() {
   await sendBrightness(10);
   await sendVibration(HAPTIC.LONG);
@@ -56,6 +58,22 @@ async function main() {
         }
         console.log('SAMPLE_RATE_REDUCER', SAMPLE_RATE_REDUCER);
         sendOscMidi([0xb0, 0x4a, SAMPLE_RATE_REDUCER]);
+      } else if (knob.id === KNOBS.knob4.id) {
+        FILTER_CUTOFF += direction;
+        if (FILTER_CUTOFF < 0) {
+          FILTER_CUTOFF = 0;
+        } else if (FILTER_CUTOFF > 128) {
+          FILTER_CUTOFF = 128;
+        }
+        sendOscMidi([0xb0, 0x4c, FILTER_CUTOFF]);
+      } else if (knob.id === KNOBS.knob5.id) {
+        FILTER_RESONANCE += direction;
+        if (FILTER_RESONANCE < 0) {
+          FILTER_RESONANCE = 0;
+        } else if (FILTER_RESONANCE > 128) {
+          FILTER_RESONANCE = 128;
+        }
+        sendOscMidi([0xb0, 0x4d, FILTER_RESONANCE]);
       }
     },
     onTouch: (state, event) => {
