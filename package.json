@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "canvas": "^2.11.2",
+    "osc": "^2.4.4",
     "serialport": "^11.0.1"
   }
 }

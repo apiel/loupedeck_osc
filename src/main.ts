@@ -8,8 +8,10 @@ import {
   HAPTIC,
   BRIGHTNESS,
   setMessageHandler,
+  KNOBS,
 } from './controller';
 import { newCanvas } from './draw';
+import { sendOscMidi } from './osc';
 
 async function drawSomething() {
   const size = { w: 90, h: 90 };
@@ -23,6 +25,7 @@ async function drawSomething() {
   await sendDrawRender();
 }
 
+let SAMPLE_RATE_REDUCER = 0;
 async function main() {
   await sendBrightness(10);
   await sendVibration(HAPTIC.LONG);
@@ -44,6 +47,16 @@ async function main() {
     },
     onKnob: (knob, direction) => {
       console.log('Knob event:', knob, direction);
+      if (knob.id === KNOBS.knob1.id) {
+        SAMPLE_RATE_REDUCER += direction;
+        if (SAMPLE_RATE_REDUCER < 0) {
+          SAMPLE_RATE_REDUCER = 0;
+        } else if (SAMPLE_RATE_REDUCER > 128) {
+          SAMPLE_RATE_REDUCER = 128;
+        }
+        console.log('SAMPLE_RATE_REDUCER', SAMPLE_RATE_REDUCER);
+        sendOscMidi([0xb0, 0x4a, SAMPLE_RATE_REDUCER]);
+      }
     },
     onTouch: (state, event) => {
       console.log('Touch event:', state, event);

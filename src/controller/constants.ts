@@ -73,6 +73,13 @@ export const BUTTONS: { [key: string]: Button } = {
   button7: { id: 0x0e, label: 'button7', isKnob: false },
 };
 
+export const KNOBS = Object.values(BUTTONS).reduce((acc, button) => {
+  if (button.isKnob) {
+    acc[button.label] = button;
+  }
+  return acc;
+}, {} as { [key: string]: Button });
+
 export const BUTTONS_BY_ID = Object.values(BUTTONS).reduce((acc, button) => {
   acc[button.id] = button;
   return acc;
